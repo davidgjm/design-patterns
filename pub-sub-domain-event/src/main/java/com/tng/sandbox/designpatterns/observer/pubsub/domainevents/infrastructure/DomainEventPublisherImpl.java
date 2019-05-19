@@ -1,26 +1,16 @@
 package com.tng.sandbox.designpatterns.observer.pubsub.domainevents.infrastructure;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PreDestroy;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class DomainEventPublisherImpl implements DomainEventPublisher {
     private static final Set<DomainEventSubscriber> subscribers = new HashSet<>();
-    private static final ExecutorService THREAD_POOL = Executors.newWorkStealingPool();
-
-    @PreDestroy
-    private void shutdown() throws InterruptedException {
-        THREAD_POOL.shutdownNow();
-        THREAD_POOL.awaitTermination(2, TimeUnit.MINUTES);
-    }
 
     @Override
     public <T extends DomainEvent> void subscribe(DomainEventSubscriber<T> subscriber) {
@@ -40,6 +30,7 @@ public class DomainEventPublisherImpl implements DomainEventPublisher {
         }
     }
 
+    @Async
     @Override
     public <T extends DomainEvent> void publish(final T domainEvent) {
         log.info("About to publish event {}", domainEvent.getClass().getName());
@@ -49,7 +40,7 @@ public class DomainEventPublisherImpl implements DomainEventPublisher {
                 .filter(p -> p.subscribedToEventType().equals(domainEvent.getClass()))
                 .forEach(s -> {
                     log.info("Notifying subscriber: {}", s.getClass().getName());
-                    THREAD_POOL.submit(() -> s.onEvent(domainEvent));
+                    s.onEvent(domainEvent);
                 });
     }
 }
