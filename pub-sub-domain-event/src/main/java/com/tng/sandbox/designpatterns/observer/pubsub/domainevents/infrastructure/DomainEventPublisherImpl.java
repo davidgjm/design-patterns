@@ -34,7 +34,7 @@ public class DomainEventPublisherImpl implements DomainEventPublisher {
     @Override
     public <T extends DomainEvent> void publish(final T domainEvent) {
         log.info("About to publish event {}", domainEvent.getClass().getName());
-        log.info("Event ID: {}", domainEvent.getEventId());
+        log.info("Event ID: {}", domainEvent.eventId());
 
         subscribers.parallelStream()
                 .filter(p -> p.subscribedToEventType().equals(domainEvent.getClass()))
